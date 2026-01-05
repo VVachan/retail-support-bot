@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MessageCircle, X } from "lucide-react";
+import { Bot } from "lucide-react";
 import ChatbotModal from "./ChatbotModal";
 
 const FloatingChatButton = () => {
@@ -16,7 +16,7 @@ const FloatingChatButton = () => {
         className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full gradient-primary shadow-lg hover:shadow-xl hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center group"
         aria-label="Open chat support"
       >
-        <MessageCircle className="w-6 h-6 text-primary-foreground" />
+        <Bot className="w-6 h-6 text-primary-foreground" />
         
         {/* Pulse animation */}
         <span className="absolute inset-0 rounded-full gradient-primary animate-ping opacity-30" />
