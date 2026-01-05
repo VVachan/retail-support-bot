@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { X, Send, User, Bot, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 interface Message {
   id: string;
@@ -28,6 +29,7 @@ const ChatbotModal = ({ isOpen, onClose }: ChatbotModalProps) => {
   const [isEscalating, setIsEscalating] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -43,64 +45,120 @@ const ChatbotModal = ({ isOpen, onClose }: ChatbotModalProps) => {
     }
   }, [isOpen]);
 
+  // Comprehensive manual responses for all questions
   const getMockResponse = (userMessage: string): string => {
-    const message = userMessage.toLowerCase();
+    const message = userMessage.toLowerCase().trim();
 
     // Human escalation triggers
-    if (message.includes("agent") || message.includes("human") || message.includes("support") || message.includes("help me") || message.includes("real person")) {
+    if (message.includes("agent") || message.includes("human") || message.includes("real person") || 
+        message.includes("speak to someone") || message.includes("talk to person") || 
+        message.includes("customer service") || message.includes("help me")) {
       return "ESCALATE";
     }
 
+    // Greetings
+    if (message.match(/^(hi|hello|hey|good morning|good afternoon|good evening|greetings)$/i) || 
+        message.includes("hi ") || message.includes("hello ") || message.includes("hey ")) {
+      return "Hello! 👋 Welcome to RetailBot customer support!\n\nI'm here to help you with:\n• Order tracking and status\n• Returns and refunds\n• Payment questions\n• Delivery information\n• Store hours and locations\n• Product availability\n• Account issues\n• Promotions and discounts\n\nWhat can I assist you with today?";
+    }
+
     // Order tracking
-    if (message.includes("order") || message.includes("track") || message.includes("where is my")) {
+    if (message.includes("order") || message.includes("track") || message.includes("where is my") || 
+        message.includes("order status") || message.includes("my package") || message.includes("shipment")) {
       if (message.includes("id") || message.includes("#") || /\d{5,}/.test(message)) {
-        return "Great! I found your order. 📦\n\n**Order Status:** In Transit\n**Expected Delivery:** Within 2-3 business days\n**Current Location:** Local Distribution Center\n\nYou'll receive an email notification when your package is out for delivery. Is there anything else I can help you with?";
+        return "Great! I found your order. 📦\n\n**Order Status:** In Transit\n**Expected Delivery:** Within 2-3 business days\n**Current Location:** Local Distribution Center\n**Tracking Number:** Available in your order confirmation email\n\nYou'll receive an email notification when your package is out for delivery. You can also track it in real-time using the tracking link in your email.\n\nIs there anything else I can help you with?";
       }
-      return "I'd be happy to help you track your order! 📦\n\nPlease provide your order ID (you can find it in your confirmation email), and I'll look it up for you.";
+      return "I'd be happy to help you track your order! 📦\n\n**To track your order:**\n1. Check your email for the order confirmation\n2. Find your Order ID (format: ORD-XXXXXX)\n3. Provide it here and I'll look it up\n\n**Or visit:**\n• Your account → Order History\n• Enter your order number\n\nPlease share your order ID and I'll check the status for you!";
     }
 
     // Returns & Refunds
-    if (message.includes("return") || message.includes("refund") || message.includes("exchange")) {
-      return "I can help you with returns and refunds! 🔄\n\n**Our Return Policy:**\n• 30-day return window from delivery date\n• Items must be unused and in original packaging\n• Free returns for store credit\n• Original payment refund within 5-7 business days\n\n**To initiate a return:**\n1. Go to your order history\n2. Select the item to return\n3. Print the prepaid shipping label\n\nWould you like me to guide you through the process?";
+    if (message.includes("return") || message.includes("refund") || message.includes("exchange") || 
+        message.includes("send back") || message.includes("cancel order")) {
+      return "I can help you with returns and refunds! 🔄\n\n**Our Return Policy:**\n• 30-day return window from delivery date\n• Items must be unused and in original packaging with tags\n• Free returns for store credit\n• Original payment refund within 5-7 business days\n• Electronics: 14-day return window\n\n**To initiate a return:**\n1. Log into your account\n2. Go to Order History\n3. Select the item to return\n4. Click 'Return Item'\n5. Print the prepaid shipping label\n6. Drop off at any carrier location\n\n**Refund Timeline:**\n• Store credit: Immediate\n• Original payment: 5-7 business days after we receive the item\n\nWould you like me to guide you through the process?";
     }
 
     // Payment issues
-    if (message.includes("payment") || message.includes("pay") || message.includes("charge") || message.includes("card") || message.includes("transaction")) {
-      return "I understand you're having payment issues. Let me help! 💳\n\n**Common solutions:**\n• Ensure your card details are entered correctly\n• Check if your card has sufficient funds\n• Try a different payment method\n• Clear your browser cache and try again\n\n**If you were charged but order failed:**\nDon't worry! Failed transactions are automatically refunded within 3-5 business days.\n\nIs the issue still unresolved?";
+    if (message.includes("payment") || message.includes("pay") || message.includes("charge") || 
+        message.includes("card") || message.includes("transaction") || message.includes("billing") || 
+        message.includes("invoice") || message.includes("credit card") || message.includes("debit")) {
+      return "I understand you're having payment issues. Let me help! 💳\n\n**Common Payment Solutions:**\n• Ensure your card details are entered correctly\n• Check if your card has sufficient funds\n• Verify your billing address matches your card\n• Try a different payment method\n• Clear your browser cache and cookies\n• Disable browser extensions temporarily\n\n**Accepted Payment Methods:**\n• Credit/Debit Cards (Visa, Mastercard, Amex)\n• PayPal\n• Apple Pay / Google Pay\n• Store Gift Cards\n\n**If you were charged but order failed:**\nDon't worry! Failed transactions are automatically refunded within 3-5 business days. The refund will appear on your statement within 7-10 business days.\n\n**Still having issues?**\nPlease provide:\n• Order number (if applicable)\n• Last 4 digits of your card\n• Error message you're seeing\n\nIs the issue still unresolved?";
     }
 
-    // Delivery
-    if (message.includes("delivery") || message.includes("shipping") || message.includes("deliver") || message.includes("delay")) {
-      return "Here's information about our delivery options! 🚚\n\n**Delivery Methods:**\n• Standard (5-7 days): Free on orders over $50\n• Express (2-3 days): $9.99\n• Next Day: $19.99\n\n**Delayed Order?**\nDelivery delays can occur due to weather or high demand. If your order is significantly delayed, please provide your order ID and I'll investigate.\n\nHow can I help further?";
+    // Delivery & Shipping
+    if (message.includes("delivery") || message.includes("shipping") || message.includes("deliver") || 
+        message.includes("delay") || message.includes("when will") || message.includes("arrive") || 
+        message.includes("ship") || message.includes("dispatch")) {
+      return "Here's information about our delivery options! 🚚\n\n**Delivery Methods & Pricing:**\n• **Standard Shipping** (5-7 business days):\n  - Free on orders over $50\n  - $4.99 for orders under $50\n\n• **Express Shipping** (2-3 business days):\n  - $9.99 flat rate\n\n• **Next Day Delivery** (1 business day):\n  - $19.99 flat rate\n  - Available in select areas\n\n**Processing Time:**\n• Orders placed before 2 PM EST: Same-day processing\n• Orders placed after 2 PM EST: Next-day processing\n• Weekend orders: Processed on Monday\n\n**Delayed Order?**\nDelivery delays can occur due to:\n• Weather conditions\n• High order volume\n• Carrier issues\n• Incorrect address\n\nIf your order is significantly delayed, please provide your order ID and I'll investigate immediately.\n\n**International Shipping:**\nAvailable to select countries. Shipping times vary by location (7-21 business days).\n\nHow can I help further?";
     }
 
-    // Store timings
-    if (message.includes("store") || message.includes("time") || message.includes("hour") || message.includes("open") || message.includes("close")) {
-      return "Here are our store hours! 🏪\n\n**Regular Hours:**\n• Monday - Friday: 9:00 AM - 9:00 PM\n• Saturday: 10:00 AM - 8:00 PM\n• Sunday: 11:00 AM - 6:00 PM\n\n**Holiday Hours:**\nStore hours may vary during holidays. Check our website for specific dates.\n\nWould you like help finding a store near you?";
+    // Store information
+    if (message.includes("store") || message.includes("location") || message.includes("address") || 
+        message.includes("hours") || message.includes("open") || message.includes("close") || 
+        message.includes("time") || message.includes("near me") || message.includes("find store")) {
+      return "Here are our store hours and locations! 🏪\n\n**Regular Store Hours:**\n• **Monday - Friday:** 9:00 AM - 9:00 PM\n• **Saturday:** 10:00 AM - 8:00 PM\n• **Sunday:** 11:00 AM - 6:00 PM\n\n**Holiday Hours:**\nStore hours may vary during holidays. Check our website for specific dates or call your local store.\n\n**Find a Store Near You:**\n• Visit our website → Store Locator\n• Enter your ZIP code or city\n• View store details, hours, and directions\n\n**Store Services:**\n• In-store pickup (available for online orders)\n• Returns and exchanges\n• Product demonstrations\n• Gift card purchases\n• Customer service support\n\n**Contact a Store:**\nCall the store directly for:\n• Product availability\n• Special orders\n• Store-specific promotions\n\nWould you like help finding a store near you?";
     }
 
-    // Product availability
-    if (message.includes("product") || message.includes("stock") || message.includes("available") || message.includes("inventory")) {
-      return "I can help you check product availability! 📦\n\nPlease provide:\n• Product name or SKU\n• Your preferred store location or ZIP code\n\nI'll check our inventory and let you know if it's in stock nearby or available for shipping.";
+    // Product availability & inventory
+    if (message.includes("product") || message.includes("item") || message.includes("stock") || 
+        message.includes("available") || message.includes("inventory") || message.includes("in stock") || 
+        message.includes("out of stock") || message.includes("when available") || message.includes("restock")) {
+      return "I can help you check product availability! 📦\n\n**To check product availability:**\nPlease provide:\n• Product name or SKU number\n• Your preferred store location or ZIP code\n• Size/color (if applicable)\n\n**I can check:**\n• In-store availability at nearby locations\n• Online stock status\n• Estimated restock dates\n• Alternative similar products\n\n**Stock Status:**\n• ✅ In Stock - Available for immediate purchase\n• ⚠️ Low Stock - Limited quantity available\n• ❌ Out of Stock - Currently unavailable\n• 🔄 Backorder - Available for pre-order\n\n**Options if out of stock:**\n• Get notified when back in stock\n• Check alternative locations\n• Find similar products\n• Pre-order if available\n\nPlease share the product name or SKU, and I'll check availability for you!";
     }
 
     // Account issues
-    if (message.includes("account") || message.includes("login") || message.includes("password") || message.includes("sign in")) {
-      return "I can help with account issues! 🔐\n\n**Can't log in?**\n• Use 'Forgot Password' to reset\n• Check your email for verification\n• Ensure caps lock is off\n\n**Account locked?**\nAfter 5 failed attempts, accounts lock for 30 minutes for security.\n\n**Need to update info?**\nGo to Account Settings after logging in.\n\nWhat specific issue are you facing?";
+    if (message.includes("account") || message.includes("login") || message.includes("password") || 
+        message.includes("sign in") || message.includes("sign up") || message.includes("register") || 
+        message.includes("forgot password") || message.includes("reset password") || message.includes("locked")) {
+      return "I can help with account issues! 🔐\n\n**Can't Log In?**\n• Click 'Forgot Password' on the login page\n• Check your email for password reset link\n• Ensure caps lock is off\n• Clear browser cache and cookies\n• Try a different browser\n\n**Account Locked?**\nAfter 5 failed login attempts, accounts lock for 30 minutes for security.\n• Wait 30 minutes and try again\n• Use 'Forgot Password' to reset\n• Contact support if issue persists\n\n**Create New Account:**\n• Click 'Sign Up' on the login page\n• Enter your email and create a password\n• Verify your email address\n• Complete your profile\n\n**Update Account Info:**\n• Log into your account\n• Go to Account Settings\n• Update: Name, Email, Address, Phone\n• Save changes\n\n**Account Benefits:**\n• Order history tracking\n• Faster checkout\n• Wishlist and saved items\n• Exclusive member discounts\n• Early access to sales\n\nWhat specific account issue are you facing?";
     }
 
-    // Greetings
-    if (message.includes("hi") || message.includes("hello") || message.includes("hey") || message === "hi" || message === "hello") {
-      return "Hello! 👋 Welcome to our customer support!\n\nI'm here to help you with:\n• Order tracking and status\n• Returns and refunds\n• Payment questions\n• Delivery information\n• Store hours and locations\n• Product availability\n\nWhat can I assist you with today?";
+    // Pricing & Discounts
+    if (message.includes("price") || message.includes("cost") || message.includes("discount") || 
+        message.includes("sale") || message.includes("promo") || message.includes("coupon") || 
+        message.includes("deal") || message.includes("offer") || message.includes("special")) {
+      return "I can help with pricing and promotions! 💰\n\n**Current Promotions:**\n• **New Customer Discount:** 10% off first order (code: WELCOME10)\n• **Free Shipping:** On orders over $50\n• **Student Discount:** 15% off with valid student ID\n• **Loyalty Program:** Earn points on every purchase\n\n**How to Use Coupons:**\n1. Add items to cart\n2. Proceed to checkout\n3. Enter coupon code in 'Promo Code' field\n4. Click 'Apply'\n\n**Price Match Policy:**\nWe match competitor prices within 30 days of purchase. Contact us with:\n• Competitor's current price\n• Product link or screenshot\n• Your order number\n\n**Best Price Guarantee:**\nIf you find a lower price within 30 days, we'll refund the difference!\n\n**Loyalty Rewards:**\n• Earn 1 point per $1 spent\n• 100 points = $5 discount\n• Birthday month bonus: 2x points\n\nWould you like to know about a specific product's price or current deals?";
     }
 
-    // Thank you
-    if (message.includes("thank") || message.includes("thanks")) {
-      return "You're welcome! 😊\n\nI'm glad I could help. Is there anything else you'd like assistance with today?\n\nIf you need further support, just type 'agent' to connect with a human representative.";
+    // Warranty & Support
+    if (message.includes("warranty") || message.includes("guarantee") || message.includes("defect") || 
+        message.includes("broken") || message.includes("damaged") || message.includes("faulty") || 
+        message.includes("not working") || message.includes("repair")) {
+      return "I can help with warranty and product support! 🛠️\n\n**Warranty Information:**\n• **Standard Products:** 1-year manufacturer warranty\n• **Electronics:** 2-year extended warranty available\n• **Apparel:** 30-day quality guarantee\n\n**What's Covered:**\n• Manufacturing defects\n• Material flaws\n• Premature wear (under normal use)\n\n**Warranty Claim Process:**\n1. Contact us within warranty period\n2. Provide order number and photos\n3. We'll review and process your claim\n4. Replacement or refund issued\n\n**Product Not Working?**\n• Check product manual/troubleshooting guide\n• Ensure proper installation/usage\n• Contact manufacturer support\n• We can help facilitate warranty claims\n\n**Damaged During Shipping?**\n• Report within 48 hours of delivery\n• Take photos of damage and packaging\n• We'll send replacement immediately\n\nPlease provide your order number and describe the issue, and I'll help you with the warranty claim!";
     }
 
-    // Default response
-    return "I'm not quite sure I understand your question. 🤔\n\nHere are some things I can help with:\n• **Order tracking** - Check your order status\n• **Returns** - Start a return or exchange\n• **Payment** - Resolve payment issues\n• **Delivery** - Shipping information\n• **Store info** - Hours and locations\n\nOr type **'agent'** to speak with a human representative.";
+    // Size & Fit
+    if (message.includes("size") || message.includes("fit") || message.includes("measurement") || 
+        message.includes("small") || message.includes("large") || message.includes("medium") || 
+        message.includes("xs") || message.includes("xl") || message.includes("xxl")) {
+      return "I can help with sizing information! 📏\n\n**Size Guide:**\n• View detailed size charts on each product page\n• Measurements in inches and centimeters\n• Model height and size worn shown\n\n**Finding Your Size:**\n1. Check the size chart for the specific product\n2. Measure yourself (chest, waist, hips for clothing)\n3. Compare with size chart measurements\n4. Consider fit preference (slim, regular, relaxed)\n\n**Fit Types:**\n• **Slim Fit:** Closer to body\n• **Regular Fit:** Standard fit\n• **Relaxed Fit:** More roomy\n\n**Size Exchange:**\n• Free size exchanges within 30 days\n• Items must be unworn with tags\n• Original packaging preferred\n\n**Still Unsure?**\n• Check customer reviews for fit feedback\n• Contact us with your measurements\n• We can recommend the best size\n\nPlease share the product you're interested in, and I can provide specific sizing information!";
+    }
+
+    // Thank you & Goodbye
+    if (message.includes("thank") || message.includes("thanks") || message.includes("appreciate")) {
+      return "You're very welcome! 😊\n\nI'm glad I could help you today. Is there anything else you'd like assistance with?\n\n**Remember:**\n• You can always come back if you have more questions\n• Type 'agent' anytime to speak with a human representative\n• Check your email for order updates and confirmations\n\nHave a wonderful day! ✨";
+    }
+
+    if (message.includes("bye") || message.includes("goodbye") || message.includes("see you") || 
+        message.includes("that's all") || message.includes("nothing else")) {
+      return "Thank you for contacting RetailBot! 👋\n\nIf you need any further assistance, feel free to reach out anytime. We're here 24/7 to help!\n\nHave a great day! 😊";
+    }
+
+    // Complaints
+    if (message.includes("complaint") || message.includes("unhappy") || message.includes("disappointed") || 
+        message.includes("poor") || message.includes("bad") || message.includes("terrible") || 
+        message.includes("worst") || message.includes("hate")) {
+      return "I'm sorry to hear about your experience. 😔\n\nYour satisfaction is very important to us. Let me help resolve this issue.\n\n**To better assist you, please provide:**\n• Order number (if applicable)\n• Details of the issue\n• Photos if relevant\n• What resolution you're hoping for\n\nI'll do my best to help, or I can connect you with a supervisor who can provide additional assistance.\n\nWould you like to share more details, or would you prefer to speak with a human agent right away?";
+    }
+
+    // Compliments
+    if (message.includes("great") || message.includes("excellent") || message.includes("love") || 
+        message.includes("amazing") || message.includes("wonderful") || message.includes("best") || 
+        message.includes("fantastic") || message.includes("awesome")) {
+      return "Thank you so much for the kind words! 😊✨\n\nWe really appreciate your feedback and are thrilled that you're happy with our service!\n\n**Your feedback helps us:**\n• Improve our products and services\n• Better serve all our customers\n• Continue providing excellent support\n\nIs there anything else I can help you with today?";
+    }
+
+    // Default response - more helpful
+    return "I want to make sure I help you correctly! 🤔\n\n**I can assist you with:**\n• **Order tracking** - Check your order status and delivery\n• **Returns & refunds** - Process returns and exchanges\n• **Payment issues** - Resolve billing and payment problems\n• **Delivery** - Shipping options and tracking\n• **Store info** - Hours, locations, and services\n• **Product availability** - Check stock and inventory\n• **Account help** - Login, password, account settings\n• **Pricing & discounts** - Current deals and promotions\n• **Warranty** - Product support and claims\n• **Sizing** - Size guides and fit information\n\n**Please try:**\n• Being more specific about what you need\n• Using keywords like 'order', 'return', 'payment', etc.\n• Or type **'agent'** to speak with a human representative\n\nWhat would you like help with?";
   };
 
   const handleSend = async () => {
@@ -117,44 +175,65 @@ const ChatbotModal = ({ isOpen, onClose }: ChatbotModalProps) => {
     setInput("");
     setIsTyping(true);
 
-    // Simulate AI thinking time
-    await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 1000));
+    try {
+      // Use manual responses (no API needed)
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      const response = getMockResponse(userMessage.content);
 
-    const response = getMockResponse(userMessage.content);
+      // Handle escalation
+      if (response === "ESCALATE") {
+        setIsTyping(false);
+        setIsEscalating(true);
 
-    if (response === "ESCALATE") {
-      setIsTyping(false);
-      setIsEscalating(true);
+        const escalateMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "bot",
+          content: "I understand you'd like to speak with a human agent. Let me transfer your request... 🔄",
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, escalateMessage]);
 
-      const escalateMessage: Message = {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+        const waitMessage: Message = {
+          id: (Date.now() + 2).toString(),
+          role: "bot",
+          content: "**Connecting you to a support agent...**\n\n⏱️ Estimated wait time: 2-3 minutes\n\nA human support representative will be with you shortly. Your conversation history has been shared with them for context.\n\n*Thank you for your patience!*",
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, waitMessage]);
+        return;
+      }
+
+      // Add bot response
+      const botMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "bot",
-        content: "I understand you'd like to speak with a human agent. Let me transfer your request... 🔄",
+        content: response,
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, escalateMessage]);
 
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      const waitMessage: Message = {
-        id: (Date.now() + 2).toString(),
+      setIsTyping(false);
+      setMessages((prev) => [...prev, botMessage]);
+    } catch (error) {
+      setIsTyping(false);
+      console.error("Error in chatbot:", error);
+      
+      // Show friendly error message
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
         role: "bot",
-        content: "**Connecting you to a support agent...**\n\n⏱️ Estimated wait time: 2-3 minutes\n\nA human support representative will be with you shortly. Your conversation history has been shared with them for context.\n\n*Thank you for your patience!*",
+        content: "I apologize, but I encountered a technical issue. 😔\n\nPlease try asking your question again, or type 'agent' to speak with a human representative who can help you immediately.",
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, waitMessage]);
-      return;
+      setMessages((prev) => [...prev, errorMessage]);
+
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
     }
-
-    const botMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      role: "bot",
-      content: response,
-      timestamp: new Date(),
-    };
-
-    setIsTyping(false);
-    setMessages((prev) => [...prev, botMessage]);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

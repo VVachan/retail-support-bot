@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { MessageCircle, Mail, Lock, User, Eye, EyeOff, ArrowLeft, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { isSupabaseConfigured } from "@/lib/supabase";
 
 type AuthMode = "login" | "signup";
 
@@ -14,6 +16,7 @@ const Auth = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signIn, signUp, resetPassword } = useAuth();
 
   // Form states
   const [formData, setFormData] = useState({
@@ -83,22 +86,108 @@ const Auth = () => {
     
     if (!validateForm()) return;
 
+    // Check if Supabase is configured
+    if (!isSupabaseConfigured()) {
+      toast({
+        title: "Configuration Error",
+        description: "Supabase is not configured. Please check your .env file and restart the server.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
-    // Simulate API call - Replace with actual Supabase auth when integrated
-    // Gemini API integration will be added later using environment variables in VS Code.
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      if (mode === "login") {
+        // Sign in
+        const { error } = await signIn(formData.email, formData.password);
 
+        if (error) {
+          toast({
+            title: "Login failed",
+            description: error.message || "Invalid email or password. Please try again.",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        toast({
+          title: "Welcome back!",
+          description: "You have successfully logged in.",
+        });
+        navigate("/");
+      } else {
+        // Sign up
+        const { error } = await signUp(
+          formData.email,
+          formData.password,
+          formData.fullName
+        );
+
+        if (error) {
+          toast({
+            title: "Sign up failed",
+            description: error.message || "Failed to create account. Please try again.",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        toast({
+          title: "Account created!",
+          description: "Your account has been created. Please check your email to verify your account.",
+        });
+        
+        // Switch to login mode after successful signup
+        setMode("login");
+        setFormData({
+          fullName: "",
+          email: formData.email, // Keep email for convenience
+          password: "",
+          confirmPassword: "",
+        });
+      }
+    } catch (error) {
+      console.error("Auth error:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!formData.email || !validateEmail(formData.email)) {
+      toast({
+        title: "Email required",
+        description: "Please enter your email address first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    const { error } = await resetPassword(formData.email);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send password reset email.",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Password reset email sent",
+        description: "Please check your email for password reset instructions.",
+      });
+    }
     setIsLoading(false);
-
-    toast({
-      title: mode === "login" ? "Welcome back!" : "Account created!",
-      description: mode === "login" 
-        ? "You have successfully logged in." 
-        : "Your account has been created. Welcome to RetailBot!",
-    });
-
-    navigate("/");
   };
 
   return (
@@ -288,7 +377,9 @@ const Auth = () => {
                 </label>
                 <button
                   type="button"
-                  className="text-sm font-medium text-primary hover:underline"
+                  onClick={handleForgotPassword}
+                  disabled={isLoading}
+                  className="text-sm font-medium text-primary hover:underline disabled:opacity-50"
                 >
                   Forgot password?
                 </button>

@@ -15,4 +15,8 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // Expose environment variables to the client
+  define: {
+    // Vite automatically exposes VITE_* variables, but we can add custom ones here if needed
+  },
 }));

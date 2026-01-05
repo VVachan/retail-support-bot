@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, Menu, X } from "lucide-react";
+import { MessageCircle, Menu, X, LogOut, User as UserIcon } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { user, signOut, loading } = useAuth();
 
   const navLinks = [
     { name: "Home", path: "/" },
@@ -44,14 +46,33 @@ const Navbar = () => {
 
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center gap-3">
-            <Link to="/auth">
-              <Button variant="ghost" size="sm">
-                Login
-              </Button>
-            </Link>
-            <Link to="/auth">
-              <Button size="sm">Sign Up</Button>
-            </Link>
+            {loading ? (
+              <div className="w-20 h-9" /> // Placeholder for loading state
+            ) : user ? (
+              <>
+                <div className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground">
+                  <UserIcon className="w-4 h-4" />
+                  <span className="max-w-[120px] truncate">
+                    {user.user_metadata?.full_name || user.email}
+                  </span>
+                </div>
+                <Button variant="ghost" size="sm" onClick={signOut}>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link to="/auth">
+                  <Button variant="ghost" size="sm">
+                    Login
+                  </Button>
+                </Link>
+                <Link to="/auth">
+                  <Button size="sm">Sign Up</Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -87,15 +108,41 @@ const Navbar = () => {
                   </Button>
                 </Link>
               ))}
-              <div className="flex gap-2 mt-4 pt-4 border-t border-border">
-                <Link to="/auth" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="outline" className="w-full">
-                    Login
-                  </Button>
-                </Link>
-                <Link to="/auth" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
-                  <Button className="w-full">Sign Up</Button>
-                </Link>
+              <div className="mt-4 pt-4 border-t border-border">
+                {loading ? (
+                  <div className="h-9" />
+                ) : user ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
+                      <UserIcon className="w-4 h-4" />
+                      <span className="truncate">
+                        {user.user_metadata?.full_name || user.email}
+                      </span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        signOut();
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Logout
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <Link to="/auth" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="outline" className="w-full">
+                        Login
+                      </Button>
+                    </Link>
+                    <Link to="/auth" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
+                      <Button className="w-full">Sign Up</Button>
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
           </div>
