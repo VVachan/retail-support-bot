@@ -138,7 +138,7 @@ const Footer = () => {
             © {currentYear} RetailBot. All rights reserved.
           </p>
           <p className="text-sm text-primary-foreground/60">
-            Made with ❤️ for exceptional customer support
+            Empowering retail with AI-driven support
           </p>
         </div>
       </div>

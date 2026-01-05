@@ -3,6 +3,7 @@ import HeroSection from "@/components/HeroSection";
 import FeaturesSection from "@/components/FeaturesSection";
 import SupportSection from "@/components/SupportSection";
 import Footer from "@/components/Footer";
+import FloatingChatButton from "@/components/FloatingChatButton";
 
 const Index = () => {
   return (
@@ -14,6 +15,7 @@ const Index = () => {
         <SupportSection />
       </main>
       <Footer />
+      <FloatingChatButton />
     </div>
   );
 };
